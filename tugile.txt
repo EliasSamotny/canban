@@ -1,0 +1,6 @@
+email:	ilya.madaev2002e@gmail.com
+pass:	jEsuisFragile_1
+
+com_id:	083adbf6-3103-4002-9496-d3fbb0616c36
+
+key: nmttfnOJeWKKPEehH4Bd4ITUlugL-irsfnOoxjI3b1-trkvl7qlPKLR0e90SmjxU
