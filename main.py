@@ -1,4 +1,4 @@
-from bit import get_curr_state_bit, get_list_of_stage
+from bit import add_stage_of_group, del_stage_of_group, get_curr_state_bit, get_list_of_stage
 from canban import create_key, from_cols_to_tasks,  get_compans, get_curr_state_canban,get_keys, get_list_of_cols
 
 def index_delement_in_bit(sett,el):
@@ -6,11 +6,15 @@ def index_delement_in_bit(sett,el):
         if sett[i][0] == el:
             return i
     return -1
-
+def if_has_in_bit(el,set):
+    for i in set:
+        if i[1] == el:
+            return True
+    return False
 def if_all_corresp(you, bit):
     for i in range(len(you)):
         for j in range(len(bit[i][2])):
-            if (not bit[i][2][j][1] in you[i][1]):
+            if not (bit[i][2][j][1] in you[i][1] and if_has_in_bit(you[i][1][j],bit[i][2][j])):
                 return False
         
     return True
@@ -59,18 +63,29 @@ if __name__ == '__main__':
         
     print (proj_mutur_cols_bit)
     
-    print (proj_cols_you)
-    
     proj_mutur_cols_you = []
     for i in range(len(proj_mutur_cols_bit)):        
         for j in range(len(proj_cols_you)):
-            if (proj_cols_you[j][0] == proj_mutur_cols_bit[i][1]):
+            if proj_cols_you[j][0] == proj_mutur_cols_bit[i][1]:
                 proj_mutur_cols_you.append(proj_cols_you[i])
     
-    print (proj_mutur_cols_you)      
-    
-    print (if_all_corresp(proj_mutur_cols_you.sort(),proj_mutur_cols_bit.sort()))
-       
+    print (proj_mutur_cols_you)
+    print(if_all_corresp(proj_mutur_cols_you,proj_mutur_cols_bit))
+    if not if_all_corresp(proj_mutur_cols_you,proj_mutur_cols_bit):
+        for i in range(len(proj_mutur_cols_you)): # projs
+            deled = False
+            for j in range(len(proj_mutur_cols_bit[i][2][j])): #cols
+                if (not proj_mutur_cols_bit[i][2][j][1] in proj_mutur_cols_you[i][1]):
+                    # delete all cols in bit
+                    for k in range(len(proj_mutur_cols_bit[i][2])):
+                        del_stage_of_group(proj_mutur_cols_bit[i][2][k][0])
+                    deled = True
+                    break
+            if (deled):
+                # copy from YouGile
+                for j in range(proj_mutur_cols_you[i][1]):
+                    add_stage_of_group(proj_mutur_cols_you[0],proj_mutur_cols_you[i][1][j])
+        
     
 
 
