@@ -1,62 +1,76 @@
-from canban import create_key, get_board, get_cols, get_compans,get_keys,get_proj, get_tasks, get_users_in_task
+from bit import get_curr_state_bit, get_list_of_stage
+from canban import create_key, from_cols_to_tasks,  get_compans, get_curr_state_canban,get_keys, get_list_of_cols
 
-log = 'ilya.madaev2002e@gmail.com'
-pas = 'jEsuisFragile_1'
+def index_delement_in_bit(sett,el):
+    for i in range(len(sett)):
+        if sett[i][0] == el:
+            return i
+    return -1
 
-comp = get_compans(log,pas).json()['content'][0]['id']
+def if_all_corresp(you, bit):
+    for i in range(len(you)):
+        for j in range(len(bit[i][2])):
+            if (not bit[i][2][j][1] in you[i][1]):
+                return False
+        
+    return True
+if __name__ == '__main__':
+    f = open('credentials_y.txt','r')
 
-key_req = get_keys(log,pas,comp)
-if key_req.status_code == 200:
-    key = key_req.json()[0]['key']
-else:
-    key = create_key(log, pas, comp).json()["key"]
-
-print (key)
-req_proj = get_proj(key)
-
-if req_proj.status_code == 200:
-    req_proj = req_proj.json()
-    proj = []
-    proj.append(req_proj['content'][0]['id']) 
-    proj.append(req_proj['content'][0]['title'])    
+    cred = f.readlines()
+    log = cred[0]
+    pas = cred[1]
     
-    req_board = get_board(key, proj[0])
-    req_board_json = req_board.json()
-    if req_board.status_code == 200 and int(req_board_json['paging']["count"]) > 0:
-        proj.append([req_board_json['content'][0]['id'],[]]) # the board
+    comp = get_compans(log,pas).json()['content'][0]['id']
 
-        req_columns = get_cols(key,proj[2][0])
-        req_columns_json = req_columns.json()
-        if req_columns.status_code == 200 and int(req_columns_json['paging']["count"]) > 0:
-            for i in range(int(req_columns_json['paging']["count"])):
-                proj[2][1].append([req_columns_json['content'][i]['id'],
-                            req_columns_json['content'][i]['title'],
-                            []]) # the board
-                
-                req_tasks = get_tasks(key, proj[2][1][i][0])
-                req_tasks_json = req_tasks.json()
-                if req_tasks.status_code == 200:
-                    for j in range(int(req_tasks_json['paging']["count"])):
-                        cont = [
-                            req_tasks_json['content'][j]['id'],
-                            req_tasks_json['content'][j]['title'],                     
-                        ]
-                        if 'description' in req_tasks_json['content'][j]:
-                            cont.append(req_tasks_json['content'][j]['description'])
-                        else: cont.append('')
-                        if 'completed' in req_tasks_json['content'][j]:    
-                            cont.append(req_tasks_json['content'][j]['completed'])
-                        else: cont.append('')
-                        print (req_tasks_json['content'][j])
-                        cont.append(get_users_in_task(key, req_tasks_json['content'][j]['assigned']))
+    key_req = get_keys(log,pas,comp)
+    if key_req.status_code == 200:
+        key = key_req.json()[0]['key']
+    else:
+        key = create_key(log, pas, comp).json()["key"]
+
+    print (key)
+    
+    projs_canb = from_cols_to_tasks(get_curr_state_canban(key))
+    print(projs_canb)
+    print('\n')
+    projs_bit = get_curr_state_bit()
+    print(projs_bit)
+    
+    
+    
+    # proceeding projects and tasks
+    proj_mutur_cols_bit = []
+    
+    for i in range(len(projs_canb)):
+        ind = index_delement_in_bit(projs_bit,projs_canb[i][0])
+        if  ind != -1:
+            stages = get_list_of_stage(projs_bit[ind][2])
+            keys_st = list(stages.keys())
+            st_list = []
+            for j in range(len(keys_st)):
+                st_list.append( [stages[keys_st[j]]['ID'],stages[keys_st[j]]['TITLE']])
+            proj_mutur_cols_bit.append([ind,projs_canb[i][0],st_list])    
                         
-                        proj[2][1][i][2].append(cont)
-                else: print ("Task \""+ proj[2][j][1] + '\" with id \"'+ proj[2][j][0] + "\" n\'existe pas!")
+        else:            
+            print ( 'Project with title \"' + projs_canb[i][0]+'\" is not found.')
     
-    elif int(req_board_json['paging']["count"]) > 0:
-        print ('No boards in project \"' + proj[1] + "\"")  
-    else: print ("Something wrong about boards")
+    proj_cols_you = get_list_of_cols(key)
+        
+    print (proj_mutur_cols_bit)
     
-    print (proj)    
-else: print ('No information about project.')
+    print (proj_cols_you)
+    
+    proj_mutur_cols_you = []
+    for i in range(len(proj_mutur_cols_bit)):        
+        for j in range(len(proj_cols_you)):
+            if (proj_cols_you[j][0] == proj_mutur_cols_bit[i][1]):
+                proj_mutur_cols_you.append(proj_cols_you[i])
+    
+    print (proj_mutur_cols_you)      
+    
+    print (if_all_corresp(proj_mutur_cols_you.sort(),proj_mutur_cols_bit.sort()))
+       
+    
+
 
